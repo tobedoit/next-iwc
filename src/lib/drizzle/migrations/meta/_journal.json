@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1757248190077,
+      "tag": "0000_smooth_ted_forrester",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1757637721828,
+      "tag": "0001_nervous_typhoid_mary",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1757637907769,
+      "tag": "0002_outgoing_cargill",
+      "breakpoints": true
+    }
+  ]
+}

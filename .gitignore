@@ -39,3 +39,17 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# editor/OS
+.idea/
+.vscode/
+Thumbs.db
+
+# caches
+.eslintcache
+.turbo
+.cache
+.swc
+
+# supabase (local dev project)
+/supabase/

@@ -3,7 +3,18 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  color-scheme: light dark;
+  /* UI surfaces */
+  --panel: #ffffff;            /* cards, inputs, buttons */
+  --panel-border: #e4e4e4;     /* light borders */
+  --table-head-bg: #f6f6f6;    /* table thead */
+  --muted: #525252;            /* secondary text */
+  /* nav */
+  --nav-active-bg: #111111;
+  --nav-active-fg: #ffffff;
+  --nav-hover-bg: #f5f5f5;
 }
+
 
 @theme inline {
   --color-background: var(--background);
@@ -17,6 +28,25 @@
     --background: #0a0a0a;
     --foreground: #ededed;
   }
+}
+
+/* Explicit theme override via data attribute (wins over media query) */
+:root[data-theme="light"] {
+  --background: #ffffff;
+  --foreground: #171717;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  color-scheme: dark;
+  --panel: #111111;
+  --panel-border: #404040;
+  --table-head-bg: #0f0f0f;
+  --muted: #bbbbbb;
+  --nav-active-bg: #f5f5f5;
+  --nav-active-fg: #111111;
+  --nav-hover-bg: #1f1f1f;
 }
 
 body {
