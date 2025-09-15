@@ -161,7 +161,7 @@ function Modal({
   }, [open, onClose]);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
       <div className="w-full max-w-lg rounded-xl p-5 shadow-xl bg-[var(--panel)] border border-[var(--panel-border)] text-[var(--foreground)]">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-[var(--foreground)]">{title}</h3>
@@ -198,7 +198,7 @@ export default function LeadsPage() {
     bride_name: "",
     groom_name: "",
     bride_phone: "",
-    bride_email: "",
+    groom_phone: "",
     source: "manual",
   });
 
@@ -335,7 +335,7 @@ export default function LeadsPage() {
       const res = await apiPost<{ ok: boolean; row: Lead }>("/api/leads", newLead);
       setRows((s) => [normalizeLead(res.row), ...s]); // 응답 사용
       setOpenNew(false);
-      setNewLead({ bride_name: "", groom_name: "", bride_phone: "", bride_email: "", source: "manual" });
+      setNewLead({ bride_name: "", groom_name: "", bride_phone: "", groom_phone: "", source: "manual" });
     } catch {
       alert("생성 실패");
     } finally {
@@ -556,8 +556,25 @@ export default function LeadsPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm text-[var(--foreground)]">신부 이메일</label>
-              <Input value={newLead.bride_email} onChange={(e) => setNewLead((s) => ({ ...s, bride_email: e.target.value }))} onKeyDown={(e) => { if (e.key === "Enter") createLead(); }} placeholder="name@example.com" />
+              <label className="mb-1 block text-sm text-[var(--foreground)]">신랑 전화</label>
+              <Input
+                value={display010(newLead.groom_phone)}
+                onChange={(e) => setNewLead((s) => ({ ...s, groom_phone: normalize010Input(e.target.value) }))}
+                onKeyDown={(e) => { if (e.key === "Enter") createLead(); }}
+                onFocus={(e) => {
+                  // Ensure prefix exists on first focus
+                  if (!newLead.groom_phone) {
+                    setNewLead((s) => ({ ...s, groom_phone: "010-" }));
+                  }
+                  const el = e.currentTarget;
+                  requestAnimationFrame(() => {
+                    const v = el.value || "";
+                    const pos = v.startsWith("010-") ? 4 : v.length;
+                    try { el.setSelectionRange(pos, pos); } catch {}
+                  });
+                }}
+                placeholder="010-"
+              />
             </div>
             <div>
               <label className="mb-1 block text-sm text-[var(--foreground)]">Source</label>

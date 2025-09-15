@@ -23,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+TODO.md
 
 # debug
 npm-debug.log*
@@ -43,6 +44,7 @@ next-env.d.ts
 # editor/OS
 .idea/
 .vscode/
+.zed/
 Thumbs.db
 
 # caches
@@ -53,3 +55,6 @@ Thumbs.db
 
 # supabase (local dev project)
 /supabase/
+
+# LLM Agents Files
+GEMINI.md
