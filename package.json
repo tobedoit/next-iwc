@@ -8,7 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:apply:link": "node scripts/run-sql.mjs scripts/sql/link_auth_public_users.sql",
+    "db:apply:backfill": "node scripts/run-sql.mjs scripts/sql/backfill_public_users.sql",
+    "db:check:latest": "node scripts/query-sql.mjs scripts/sql/check_latest_link.sql",
+    "db:check:counts": "node scripts/query-sql.mjs scripts/sql/check_counts.sql"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",
