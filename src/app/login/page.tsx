@@ -1,6 +1,6 @@
 // src/app/login/page.tsx
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import Link from "next/link";
 
@@ -9,7 +9,37 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [org, setOrg] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
+  const [orgOptions, setOrgOptions] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function fetchOrgs() {
+      try {
+        const supabase = supabaseBrowser();
+        const { data, error } = await supabase
+          .from("orgs")
+          .select("id,name")
+          .order("name", { ascending: true });
+        if (!ignore) {
+          if (error) {
+            console.error("Failed to load org list", error);
+            return;
+          }
+          setOrgOptions(data ?? []);
+        }
+      } catch (err) {
+        if (!ignore) console.error("Unexpected org fetch error", err);
+      }
+    }
+
+    fetchOrgs();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   async function onLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -45,8 +75,15 @@ export default function LoginPage() {
                value={email} onChange={e=>setEmail(e.target.value)} />
         <input className="w-full rounded border px-3 py-2" placeholder="Password" type="password"
                value={password} onChange={e=>setPassword(e.target.value)} />
-        <input className="w-full rounded border px-3 py-2" placeholder="(선택) org_id"
-               value={org} onChange={e=>setOrg(e.target.value)} />
+        <select className="w-full rounded border px-3 py-2" value={org}
+                onChange={e=>setOrg(e.target.value)}>
+          <option value="">(선택) org 선택</option>
+          {orgOptions.map((opt) => (
+            <option key={opt.id} value={opt.id}>
+              {opt.name}
+            </option>
+          ))}
+        </select>
         <button disabled={loading} className="w-full rounded-md border px-3 py-2">
           {loading ? "Signing in..." : "Sign in"}
         </button>
