@@ -21,20 +21,122 @@ export type Appointment = {
 };
 
 type ApptListResponse = { ok: boolean; rows: Appointment[]; nextCursor: string | null };
+type AppointmentPatch = Partial<Pick<Appointment, "kind" | "status" | "note" | "startAt" | "endAt" >>;
+type NewApptForm = {
+  kind: Appointment["kind"];
+  status: Appointment["status"];
+  start_at: string;
+  end_at: string;
+  note: string;
+  customer_id: string;
+  staff_id: string;
+};
 
-function normalizeAppt(row: any): Appointment {
+type RawAppointment = Record<string, unknown> & {
+  id?: unknown;
+  orgId?: unknown;
+  org_id?: unknown;
+  customerId?: unknown;
+  customer_id?: unknown;
+  staffId?: unknown;
+  staff_id?: unknown;
+  kind?: unknown;
+  startAt?: unknown;
+  start_at?: unknown;
+  endAt?: unknown;
+  end_at?: unknown;
+  status?: unknown;
+  note?: unknown;
+  createdAt?: unknown;
+  created_at?: unknown;
+};
+
+const KIND_OPTIONS: Appointment["kind"][] = ["visit", "phone", "check"];
+const STATUS_OPTIONS: Appointment["status"][] = ["scheduled", "done", "canceled"];
+const INITIAL_NEW_APPT: NewApptForm = {
+  kind: "visit",
+  status: "scheduled",
+  start_at: "",
+  end_at: "",
+  note: "",
+  customer_id: "",
+  staff_id: "",
+};
+
+function isKind(value: string): value is Appointment["kind"] {
+  return KIND_OPTIONS.includes(value as Appointment["kind"]);
+}
+
+function isStatus(value: string): value is Appointment["status"] {
+  return STATUS_OPTIONS.includes(value as Appointment["status"]);
+}
+
+function readString(obj: RawAppointment, ...keys: (keyof RawAppointment)[]): string {
+  for (const key of keys) {
+    const value = obj[key];
+    if (typeof value === "string") return value;
+    if (value instanceof Date) return value.toISOString();
+    if (typeof value === "number") return String(value);
+  }
+  return "";
+}
+
+function readNullableString(obj: RawAppointment, ...keys: (keyof RawAppointment)[]): string | null {
+  for (const key of keys) {
+    const value = obj[key];
+    if (value === null) return null;
+    if (typeof value === "string") return value;
+    if (value instanceof Date) return value.toISOString();
+    if (typeof value === "number") return String(value);
+  }
+  return null;
+}
+
+function normalizeAppt(row: unknown): Appointment {
+  if (!row || typeof row !== "object") {
+    throw new Error("Invalid appointment row");
+  }
+  const raw = row as RawAppointment;
+  const kindValue = readString(raw, "kind");
+  const statusValue = readString(raw, "status");
+
   return {
-    id: row.id,
-    orgId: row.orgId ?? row.org_id,
-    customerId: row.customerId ?? row.customer_id ?? null,
-    staffId: row.staffId ?? row.staff_id ?? null,
-    kind: row.kind,
-    startAt: row.startAt ?? row.start_at,
-    endAt: row.endAt ?? row.end_at,
-    status: row.status,
-    note: row.note ?? null,
-    createdAt: row.createdAt ?? row.created_at,
+    id: readString(raw, "id"),
+    orgId: readString(raw, "orgId", "org_id"),
+    customerId: readNullableString(raw, "customerId", "customer_id"),
+    staffId: readNullableString(raw, "staffId", "staff_id"),
+    kind: isKind(kindValue) ? kindValue : "visit",
+    startAt: readString(raw, "startAt", "start_at"),
+    endAt: readString(raw, "endAt", "end_at"),
+    status: isStatus(statusValue) ? statusValue : "scheduled",
+    note: readNullableString(raw, "note"),
+    createdAt: readString(raw, "createdAt", "created_at"),
   };
+}
+
+function patchToSnake(patch: AppointmentPatch): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(patch)) {
+    if (value === undefined) continue;
+    if (key === "startAt") out.start_at = value;
+    else if (key === "endAt") out.end_at = value;
+    else out[key] = value;
+  }
+  return out;
+}
+
+function normalizeDateParam(value: string): string {
+  return value;
+}
+
+function extractErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
 }
 
 /* ---------- Small UI bits ---------- */
@@ -75,31 +177,6 @@ function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
     />
   );
 }
-function Switch({
-  checked,
-  onChange,
-  disabled,
-}: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
-  return (
-    <button
-      type="button"
-      onClick={() => !disabled && onChange(!checked)}
-      className={`h-6 w-11 rounded-full border px-0.5 transition
-        ${checked ? "bg-green-500/90 border-green-600" : "bg-neutral-200 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600"}
-        ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
-      aria-pressed={checked}
-    >
-      <span className={`block h-5 w-5 rounded-full bg-white shadow transition ${checked ? "translate-x-5" : "translate-x-0"}`} />
-    </button>
-  );
-}
-function Badge({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded-full border px-2 py-0.5 text-[11px] text-neutral-600 bg-neutral-50">
-      {children}
-    </span>
-  );
-}
 function Modal({
   open, onClose, title, children,
 }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode }) {
@@ -110,7 +187,7 @@ function Modal({
   }, [open, onClose]);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
       <div className="w-full max-w-xl rounded-xl p-5 shadow-xl bg-[var(--panel)] border border-[var(--panel-border)] text-[var(--foreground)]">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-[var(--foreground)]">{title}</h3>
@@ -185,15 +262,7 @@ export default function AppointmentsPage() {
   // create modal
   const [openNew, setOpenNew] = useState(false);
   const [savingNew, setSavingNew] = useState(false);
-  const [newAppt, setNewAppt] = useState({
-    kind: "visit" as "visit" | "phone" | "check",
-    status: "scheduled" as "scheduled" | "done" | "canceled",
-    start_at: "",
-    end_at: "",
-    note: "",
-    customer_id: "" as string | undefined,
-    staff_id: "" as string | undefined,
-  });
+  const [newAppt, setNewAppt] = useState<NewApptForm>(INITIAL_NEW_APPT);
 
   // debounce search
   const [debouncedQ, setDebouncedQ] = useState("");
@@ -218,8 +287,8 @@ export default function AppointmentsPage() {
       const data = await apiGet<ApptListResponse>(`/api/appointments?${params}`);
       setRows((data.rows ?? []).map(normalizeAppt));
       setNextCursor(data.nextCursor ?? null);
-    } catch (e: any) {
-      setErr(String(e?.message ?? e));
+    } catch (error) {
+      setErr(extractErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -270,7 +339,9 @@ export default function AppointmentsPage() {
               return prev.map((r) => (r.id === next.id ? next : r));
             }
             if (payload.eventType === "DELETE") {
-              const oldId = (payload.old as any).id;
+              const oldRecord = payload.old as Record<string, unknown> | null;
+              const oldId = oldRecord && typeof oldRecord.id === "string" ? oldRecord.id : null;
+              if (!oldId) return prev;
               return prev.filter((r) => r.id !== oldId);
             }
             return prev;
@@ -289,18 +360,20 @@ export default function AppointmentsPage() {
     }
     setSavingNew(true);
     try {
-      const res = await apiPost<{ ok: boolean; row: Appointment }>("/api/appointments", newAppt);
+      const payload: Record<string, unknown> = {
+        kind: newAppt.kind,
+        status: newAppt.status,
+        start_at: newAppt.start_at,
+        end_at: newAppt.end_at,
+        note: newAppt.note,
+      };
+      if (newAppt.customer_id) payload.customer_id = newAppt.customer_id;
+      if (newAppt.staff_id) payload.staff_id = newAppt.staff_id;
+
+      const res = await apiPost<{ ok: boolean; row: Appointment }>("/api/appointments", payload);
       setRows((s) => [normalizeAppt(res.row), ...s]);
       setOpenNew(false);
-      setNewAppt({
-        kind: "visit",
-        status: "scheduled",
-        start_at: "",
-        end_at: "",
-        note: "",
-        customer_id: "",
-        staff_id: "",
-      });
+      setNewAppt(INITIAL_NEW_APPT);
     } catch {
       alert("생성 실패");
     } finally {
@@ -308,11 +381,11 @@ export default function AppointmentsPage() {
     }
   }
 
-  async function updateField(id: string, patch: Partial<Record<keyof Appointment, any>>) {
+  async function updateField(id: string, patch: AppointmentPatch) {
     try {
       await apiPatch("/api/appointments", { id, ...patchToSnake(patch) });
       setRows((prev) =>
-        prev.map((r) => (r.id === id ? ({ ...r, ...patch } as Appointment) : r))
+        prev.map((r) => (r.id === id ? { ...r, ...patch } : r))
       );
     } catch {
       await fetchList();
@@ -343,22 +416,6 @@ export default function AppointmentsPage() {
   }, [rows]);
 
   /* ----- helpers ----- */
-  function patchToSnake(patch: Partial<Record<keyof Appointment, any>>) {
-    const out: any = {};
-    for (const [k, v] of Object.entries(patch)) {
-      if (v === undefined) continue;
-      if (k === "startAt") out.start_at = v;
-      else if (k === "endAt") out.end_at = v;
-      else out[k] = v;
-    }
-    return out;
-  }
-  function normalizeDateParam(s: string) {
-    // datetime-local 값(YYYY-MM-DDTHH:mm)을 ISO로 바꾸지 않아도 서버 Date.parse 가능.
-    // 단, 타임존 혼동 방지 위해 그대로 전달.
-    return s;
-  }
-
   return (
     <Shell title="Appointments">
       {/* header */}
@@ -384,13 +441,27 @@ export default function AppointmentsPage() {
       {/* filters */}
       <div className="mt-6 flex flex-wrap items-center gap-2">
         <Input placeholder="검색(q): kind/status/note…" value={q} onChange={(e) => setQ(e.target.value)} />
-        <Select value={kind} onChange={(e) => setKind(e.target.value as any)}>
+        <Select
+          value={kind}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (!value) { setKind(""); return; }
+            if (isKind(value)) setKind(value);
+          }}
+        >
           <option value="">kind: All</option>
           <option value="visit">visit</option>
           <option value="phone">phone</option>
           <option value="check">check</option>
         </Select>
-        <Select value={status} onChange={(e) => setStatus(e.target.value as any)}>
+        <Select
+          value={status}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (!value) { setStatus(""); return; }
+            if (isStatus(value)) setStatus(value);
+          }}
+        >
           <option value="">status: All</option>
           <option value="scheduled">scheduled</option>
           <option value="done">done</option>
@@ -436,7 +507,10 @@ export default function AppointmentsPage() {
                   <td className="px-4 py-3">
                     <Select
                       value={r.kind}
-                      onChange={(e) => updateField(r.id, { kind: e.target.value })}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (isKind(value)) updateField(r.id, { kind: value });
+                      }}
                     >
                       <option value="visit">visit</option>
                       <option value="phone">phone</option>
@@ -447,7 +521,10 @@ export default function AppointmentsPage() {
                   <td className="px-4 py-3">
                     <Select
                       value={r.status}
-                      onChange={(e) => updateField(r.id, { status: e.target.value })}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (isStatus(value)) updateField(r.id, { status: value });
+                      }}
                     >
                       <option value="scheduled">scheduled</option>
                       <option value="done">done</option>
@@ -504,7 +581,10 @@ export default function AppointmentsPage() {
               <label className="mb-1 block text-sm text-neutral-700">Kind</label>
               <Select
                 value={newAppt.kind}
-                onChange={(e) => setNewAppt((s) => ({ ...s, kind: e.target.value as any }))}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (isKind(value)) setNewAppt((s) => ({ ...s, kind: value }));
+                }}
               >
                 <option value="visit">visit</option>
                 <option value="phone">phone</option>
@@ -515,7 +595,10 @@ export default function AppointmentsPage() {
               <label className="mb-1 block text-sm text-neutral-700">Status</label>
               <Select
                 value={newAppt.status}
-                onChange={(e) => setNewAppt((s) => ({ ...s, status: e.target.value as any }))}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (isStatus(value)) setNewAppt((s) => ({ ...s, status: value }));
+                }}
               >
                 <option value="scheduled">scheduled</option>
                 <option value="done">done</option>

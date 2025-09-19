@@ -3,22 +3,27 @@
 import { supabaseBrowser } from "@/lib/supabase/browser";
 
 /** 세션 토큰 헤더 생성 */
-async function authHeader() {
+async function authHeader(): Promise<Record<string, string>> {
   const sb = supabaseBrowser();
   const { data } = await sb.auth.getSession();
   const token = data.session?.access_token;
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const headers = await authHeader();
+async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const auth = await authHeader();
+  const headers = new Headers(init.headers);
+  const isFormData = typeof FormData !== "undefined" && init.body instanceof FormData;
+  if (!headers.has("Content-Type") && !isFormData) {
+    headers.set("Content-Type", "application/json");
+  }
+  for (const [key, value] of Object.entries(auth)) {
+    headers.set(key, value);
+  }
+
   const res = await fetch(path, {
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...headers,
-      ...(init?.headers || {}),
-    },
+    headers,
     cache: "no-store",
   });
 
@@ -30,14 +35,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export const apiGet = <T = any>(path: string) =>
-  request<T>(path, { method: "GET" });
+export const apiGet = <T = unknown>(path: string) => request<T>(path, { method: "GET" });
 
-export const apiPost = <T = any>(path: string, body?: any) =>
-  request<T>(path, { method: "POST", body: JSON.stringify(body ?? {}) });
+export const apiPost = <T = unknown>(path: string, body?: Record<string, unknown> | FormData) =>
+  request<T>(path, { method: "POST", body: body instanceof FormData ? body : JSON.stringify(body ?? {}) });
 
-export const apiPatch = <T = any>(path: string, body?: any) =>
-  request<T>(path, { method: "PATCH", body: JSON.stringify(body ?? {}) });
+export const apiPatch = <T = unknown>(path: string, body?: Record<string, unknown> | FormData) =>
+  request<T>(path, { method: "PATCH", body: body instanceof FormData ? body : JSON.stringify(body ?? {}) });
 
-export const apiDelete = <T = any>(path: string) =>
-  request<T>(path, { method: "DELETE" });
+export const apiDelete = <T = unknown>(path: string) => request<T>(path, { method: "DELETE" });
