@@ -48,29 +48,115 @@ export type Lead = {
 };
 
 // DB → 프런트 매핑
-function normalizeLead(row: any): Lead {
+type RawLead = Record<string, unknown> & {
+  id?: unknown;
+  orgId?: unknown;
+  org_id?: unknown;
+  brideName?: unknown;
+  bride_name?: unknown;
+  groomName?: unknown;
+  groom_name?: unknown;
+  bridePhone?: unknown;
+  bride_phone?: unknown;
+  groomPhone?: unknown;
+  groom_phone?: unknown;
+  brideEmail?: unknown;
+  bride_email?: unknown;
+  groomEmail?: unknown;
+  groom_email?: unknown;
+  addr1?: unknown;
+  addr2?: unknown;
+  interests?: unknown;
+  weddingPlannedOn?: unknown;
+  wedding_planned_on?: unknown;
+  expectedVenue?: unknown;
+  expected_venue?: unknown;
+  memo?: unknown;
+  source?: unknown;
+  visited?: unknown;
+  consent?: unknown;
+  consentAt?: unknown;
+  consent_at?: unknown;
+  customerId?: unknown;
+  customer_id?: unknown;
+  createdAt?: unknown;
+  created_at?: unknown;
+};
+
+type NewLeadForm = { bride_name: string; groom_name: string; bride_phone: string; groom_phone: string; source: Lead["source"]; };
+
+const INITIAL_NEW_LEAD: NewLeadForm = {
+  bride_name: "",
+  groom_name: "",
+  bride_phone: "",
+  groom_phone: "",
+  source: "manual",
+};
+
+function readLeadString(raw: RawLead, ...keys: (keyof RawLead)[]): string {
+  for (const key of keys) {
+    const value = raw[key];
+    if (value === null || value === undefined) continue;
+    if (typeof value === "string") return value;
+    if (value instanceof Date) return value.toISOString();
+    if (typeof value === "number") return String(value);
+  }
+  return "";
+}
+
+function readLeadOptionalString(raw: RawLead, ...keys: (keyof RawLead)[]): string | null {
+  for (const key of keys) {
+    const value = raw[key];
+    if (value === null) return null;
+    if (typeof value === "string") return value;
+    if (value instanceof Date) return value.toISOString();
+    if (typeof value === "number") return String(value);
+  }
+  return null;
+}
+
+function normalizeLead(row: unknown): Lead {
+  if (!row || typeof row !== "object") {
+    throw new Error("Invalid lead row");
+  }
+  const raw = row as RawLead;
+  const interestsValue = Array.isArray(raw.interests)
+    ? raw.interests.filter((item): item is string => typeof item === "string")
+    : raw.interests === null
+      ? null
+      : null;
   return {
-    id: row.id,
-    orgId: row.orgId ?? row.org_id,
-    brideName: row.brideName ?? row.bride_name,
-    groomName: row.groomName ?? row.groom_name,
-    bridePhone: row.bridePhone ?? row.bride_phone ?? null,
-    groomPhone: row.groomPhone ?? row.groom_phone ?? null,
-    brideEmail: row.brideEmail ?? row.bride_email ?? null,
-    groomEmail: row.groomEmail ?? row.groom_email ?? null,
-    addr1: row.addr1 ?? null,
-    addr2: row.addr2 ?? null,
-    interests: row.interests ?? null,
-    weddingPlannedOn: row.weddingPlannedOn ?? row.wedding_planned_on ?? null,
-    expectedVenue: row.expectedVenue ?? row.expected_venue ?? null,
-    memo: row.memo ?? null,
-    source: row.source,
-    visited: row.visited,
-    consent: row.consent,
-    consentAt: row.consentAt ?? row.consent_at ?? null,
-    customerId: row.customerId ?? row.customer_id ?? null,
-    createdAt: row.createdAt ?? row.created_at,
+    id: readLeadString(raw, "id"),
+    orgId: readLeadString(raw, "orgId", "org_id"),
+    brideName: readLeadString(raw, "brideName", "bride_name"),
+    groomName: readLeadString(raw, "groomName", "groom_name"),
+    bridePhone: readLeadOptionalString(raw, "bridePhone", "bride_phone"),
+    groomPhone: readLeadOptionalString(raw, "groomPhone", "groom_phone"),
+    brideEmail: readLeadOptionalString(raw, "brideEmail", "bride_email"),
+    groomEmail: readLeadOptionalString(raw, "groomEmail", "groom_email"),
+    addr1: readLeadOptionalString(raw, "addr1"),
+    addr2: readLeadOptionalString(raw, "addr2"),
+    interests: interestsValue,
+    weddingPlannedOn: readLeadOptionalString(raw, "weddingPlannedOn", "wedding_planned_on"),
+    expectedVenue: readLeadOptionalString(raw, "expectedVenue", "expected_venue"),
+    memo: readLeadOptionalString(raw, "memo"),
+    source: readLeadString(raw, "source") || "etc",
+    visited: raw.visited === true,
+    consent: raw.consent === true,
+    consentAt: readLeadOptionalString(raw, "consentAt", "consent_at"),
+    customerId: readLeadOptionalString(raw, "customerId", "customer_id"),
+    createdAt: readLeadString(raw, "createdAt", "created_at"),
   };
+}
+
+function extractErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
 }
 
 // ---- Small UI bits ----
@@ -116,14 +202,6 @@ function Switch({
     </button>
   );
 }
-function Badge({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded-full border px-2 py-0.5 text-[11px] text-neutral-600 bg-neutral-50 dark:text-neutral-300 dark:bg-neutral-800 dark:border-neutral-700">
-      {children}
-    </span>
-  );
-}
-
 // Phone helpers (KR mobile)
 function onlyDigits(s: string) { return s.replace(/\D/g, ""); }
 function fmtPhoneKR(d: string) {
@@ -197,13 +275,7 @@ export default function LeadsPage() {
   // new lead modal state
   const [openNew, setOpenNew] = useState(false);
   const [savingNew, setSavingNew] = useState(false);
-  const [newLead, setNewLead] = useState({
-    bride_name: "",
-    groom_name: "",
-    bride_phone: "",
-    groom_phone: "",
-    source: "manual",
-  });
+  const [newLead, setNewLead] = useState<NewLeadForm>(INITIAL_NEW_LEAD);
 
   // debounce query
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -228,8 +300,8 @@ export default function LeadsPage() {
       const data = await apiGet<{ ok: boolean; rows: Lead[]; nextCursor: string | null }>(`/api/leads?${params}`);
       setRows((data.rows ?? []).map(normalizeLead));
       setNextCursor(data.nextCursor ?? null);
-    } catch (e: any) {
-      setErr(String(e?.message ?? e));
+    } catch (error) {
+      setErr(extractErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -255,7 +327,7 @@ export default function LeadsPage() {
       const data = await apiGet<{ ok: boolean; rows: Lead[]; nextCursor: string | null }>(`/api/leads?${params}`);
       setRows((prev) => [...prev, ...(data.rows ?? []).map(normalizeLead)]);
       setNextCursor(data.nextCursor ?? null);
-    } catch (e) {
+    } catch {
       // noop
     } finally {
       setIsLoadingMore(false);
@@ -281,7 +353,9 @@ export default function LeadsPage() {
               return prev.map((r) => (r.id === next.id ? next : r));
             }
             if (payload.eventType === "DELETE") {
-              const oldId = (payload.old as any).id;
+              const oldRecord = payload.old as Record<string, unknown> | null;
+              const oldId = oldRecord && typeof oldRecord.id === "string" ? oldRecord.id : null;
+              if (!oldId) return prev;
               return prev.filter((r) => r.id !== oldId);
             }
             return prev;
@@ -338,7 +412,7 @@ export default function LeadsPage() {
       const res = await apiPost<{ ok: boolean; row: Lead }>("/api/leads", newLead);
       setRows((s) => [normalizeLead(res.row), ...s]); // 응답 사용
       setOpenNew(false);
-      setNewLead({ bride_name: "", groom_name: "", bride_phone: "", groom_phone: "", source: "manual" });
+      setNewLead(INITIAL_NEW_LEAD);
     } catch {
       alert("생성 실패");
     } finally {
@@ -399,12 +473,26 @@ export default function LeadsPage() {
             <option key={opt} value={opt}>{opt}</option>
           ))}
         </select>
-        <select value={visited} onChange={(e) => setVisited(e.target.value as any)} className="rounded-md border px-3 py-2 text-sm bg-[var(--panel)] text-[var(--foreground)] border-[var(--panel-border)] cursor-pointer">
+        <select
+          value={visited}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (value === "" || value === "true" || value === "false") setVisited(value);
+          }}
+          className="rounded-md border px-3 py-2 text-sm bg-[var(--panel)] text-[var(--foreground)] border-[var(--panel-border)] cursor-pointer"
+        >
           <option value="">visited: All</option>
           <option value="true">visited: true</option>
           <option value="false">visited: false</option>
         </select>
-        <select value={consent} onChange={(e) => setConsent(e.target.value as any)} className="rounded-md border px-3 py-2 text-sm bg-[var(--panel)] text-[var(--foreground)] border-[var(--panel-border)] cursor-pointer">
+        <select
+          value={consent}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (value === "" || value === "true" || value === "false") setConsent(value);
+          }}
+          className="rounded-md border px-3 py-2 text-sm bg-[var(--panel)] text-[var(--foreground)] border-[var(--panel-border)] cursor-pointer"
+        >
           <option value="">consent: All</option>
           <option value="true">consent: true</option>
           <option value="false">consent: false</option>

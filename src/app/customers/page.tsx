@@ -20,17 +20,82 @@ type Customer = {
 };
 type CustomerListResponse = { ok: boolean; rows: Customer[]; nextCursor: string | null };
 
-function normalizeCustomer(row: any): Customer {
+type RawCustomer = Record<string, unknown> & {
+  id?: unknown;
+  orgId?: unknown;
+  org_id?: unknown;
+  name?: unknown;
+  phone?: unknown;
+  email?: unknown;
+  addr1?: unknown;
+  addr2?: unknown;
+  createdAt?: unknown;
+  created_at?: unknown;
+};
+
+type CustomerPatch = Partial<Pick<Customer, "name" | "phone" | "email" | "addr1" | "addr2">>;
+
+const INITIAL_DETAIL_FORM = { name: "", phone: "", email: "", addr1: "", addr2: "" };
+const INITIAL_NEW_CUSTOMER = { name: "", phone: "", email: "", addr1: "", addr2: "", memo: "" };
+type DetailForm = typeof INITIAL_DETAIL_FORM;
+type NewCustomerForm = typeof INITIAL_NEW_CUSTOMER;
+
+function readRequiredString(raw: RawCustomer, ...keys: (keyof RawCustomer)[]): string {
+  for (const key of keys) {
+    const value = raw[key];
+    if (typeof value === "string") return value;
+    if (value instanceof Date) return value.toISOString();
+    if (typeof value === "number") return String(value);
+  }
+  return "";
+}
+
+function readOptionalString(raw: RawCustomer, ...keys: (keyof RawCustomer)[]): string | null {
+  for (const key of keys) {
+    const value = raw[key];
+    if (value === null) return null;
+    if (typeof value === "string") return value;
+    if (value instanceof Date) return value.toISOString();
+    if (typeof value === "number") return String(value);
+  }
+  return null;
+}
+
+function normalizeCustomer(row: unknown): Customer {
+  if (!row || typeof row !== "object") {
+    throw new Error("Invalid customer row");
+  }
+  const raw = row as RawCustomer;
   return {
-    id: row.id,
-    orgId: row.orgId ?? row.org_id,
-    name: row.name,
-    phone: String(row.phone ?? ""),
-    email: row.email ?? null,
-    addr1: row.addr1 ?? null,
-    addr2: row.addr2 ?? null,
-    createdAt: row.createdAt ?? row.created_at,
+    id: readRequiredString(raw, "id"),
+    orgId: readRequiredString(raw, "orgId", "org_id"),
+    name: readRequiredString(raw, "name"),
+    phone: readRequiredString(raw, "phone"),
+    email: readOptionalString(raw, "email"),
+    addr1: readOptionalString(raw, "addr1"),
+    addr2: readOptionalString(raw, "addr2"),
+    createdAt: readRequiredString(raw, "createdAt", "created_at"),
   };
+}
+
+function prepareCustomerPatch(patch: CustomerPatch): Record<string, unknown> {
+  const body: Record<string, unknown> = {};
+  if (patch.name !== undefined) body.name = patch.name;
+  if (patch.phone !== undefined) body.phone = display010(patch.phone);
+  if (patch.email !== undefined) body.email = patch.email ?? null;
+  if (patch.addr1 !== undefined) body.addr1 = patch.addr1 ?? null;
+  if (patch.addr2 !== undefined) body.addr2 = patch.addr2 ?? null;
+  return body;
+}
+
+function extractErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
 }
 
 /* ---------- Small UI bits ---------- */
@@ -68,7 +133,7 @@ function Modal({
   }, [open, onClose]);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
       <div className="w-full max-w-xl rounded-xl p-5 shadow-xl bg-[var(--panel)] border border-[var(--panel-border)] text-[var(--foreground)]">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-[var(--foreground)]">{title}</h3>
@@ -79,28 +144,23 @@ function Modal({
     </div>
   );
 }
+function formatPhone(value?: string | null) {
+  const digits = (value ?? "").replace(/\D/g, "").slice(0, 11);
+  if (!digits) return "";
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+}
+
 function EditableCell({
   value, placeholder, onSave,
 }: { value: string | null; placeholder?: string; onSave: (v: string) => Promise<void> }) {
   const isPhone = /전화/.test(placeholder ?? "");
   const [editing, setEditing] = useState(false);
-  const [val, setVal] = useState(() => {
-    const v = value ?? "";
-    if (!isPhone) return v;
-    const d = v.replace(/\D/g, "");
-    if (!d) return "";
-    if (d.length <= 3) return d;
-    if (d.length <= 7) return `${d.slice(0,3)}-${d.slice(3)}`;
-    return `${d.slice(0,3)}-${d.slice(3,7)}-${d.slice(7,11)}`;
-  });
+  const [val, setVal] = useState(() => (isPhone ? formatPhone(value) : (value ?? "")));
   useEffect(() => {
-    const v = value ?? "";
-    if (!isPhone) { setVal(v); return; }
-    const d = v.replace(/\D/g, "");
-    if (!d) { setVal(""); return; }
-    if (d.length <= 3) setVal(d);
-    else if (d.length <= 7) setVal(`${d.slice(0,3)}-${d.slice(3)}`);
-    else setVal(`${d.slice(0,3)}-${d.slice(3,7)}-${d.slice(7,11)}`);
+    if (!isPhone) { setVal(value ?? ""); return; }
+    setVal(formatPhone(value));
   }, [value, isPhone]);
 
   async function commit() {
@@ -132,10 +192,8 @@ function EditableCell({
       onChange={(e) => {
         const v = e.target.value;
         if (!isPhone) { setVal(v); return; }
-        const d = v.replace(/\D/g, "").slice(0,11);
-        if (d.length <= 3) setVal(d);
-        else if (d.length <= 7) setVal(`${d.slice(0,3)}-${d.slice(3)}`);
-        else setVal(`${d.slice(0,3)}-${d.slice(3,7)}-${d.slice(7,11)}`);
+        const d = onlyDigits(v).slice(0, 11);
+        setVal(formatPhone(d));
       }}
       onFocus={(e) => {
         if (isPhone && !val) {
@@ -183,23 +241,46 @@ export default function CustomersPage() {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
+  // detail modal
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const detailCustomer = useMemo(
+    () => (detailId ? rows.find((r) => r.id === detailId) ?? null : null),
+    [rows, detailId]
+  );
+  const [detailForm, setDetailForm] = useState<DetailForm>(INITIAL_DETAIL_FORM);
+  const [detailDirty, setDetailDirty] = useState(false);
+  const [detailSaving, setDetailSaving] = useState(false);
+
   // new customer modal
   const [openNew, setOpenNew] = useState(false);
   const [savingNew, setSavingNew] = useState(false);
-  const [newCustomer, setNewCustomer] = useState({
-    name: "",
-    phone: "",
-    email: "",
-    addr1: "",
-    addr2: "",
-    memo: "",
-  });
+  const [newCustomer, setNewCustomer] = useState<NewCustomerForm>(INITIAL_NEW_CUSTOMER);
 
   // debounce q
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQ(q.trim()), 300);
     return () => clearTimeout(t);
   }, [q]);
+
+  useEffect(() => {
+    if (!detailId) {
+      setDetailForm(INITIAL_DETAIL_FORM);
+      setDetailDirty(false);
+      return;
+    }
+    if (!detailCustomer) {
+      setDetailId(null);
+      return;
+    }
+    setDetailForm({
+      name: detailCustomer.name ?? "",
+      phone: formatPhone(detailCustomer.phone),
+      email: detailCustomer.email ?? "",
+      addr1: detailCustomer.addr1 ?? "",
+      addr2: detailCustomer.addr2 ?? "",
+    });
+    setDetailDirty(false);
+  }, [detailId, detailCustomer]);
 
   /* ----- fetch list ----- */
   const fetchList = useCallback(async () => {
@@ -213,8 +294,8 @@ export default function CustomersPage() {
       const data = await apiGet<CustomerListResponse>(`/api/customers?${params}`);
       setRows((data.rows ?? []).map(normalizeCustomer));
       setNextCursor(data.nextCursor ?? null);
-    } catch (e: any) {
-      setErr(String(e?.message ?? e));
+    } catch (error) {
+      setErr(extractErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -242,6 +323,55 @@ export default function CustomersPage() {
     }
   }, [debouncedQ, sort, nextCursor]);
 
+  const closeDetail = () => setDetailId(null);
+
+  const applyDetailChange = (field: "name" | "phone" | "email" | "addr1" | "addr2", value: string) => {
+    setDetailForm((prev) => ({ ...prev, [field]: value }));
+    setDetailDirty(true);
+  };
+
+  async function saveDetail() {
+    if (!detailCustomer) return;
+    const patch: CustomerPatch = {};
+    const trimmedName = detailForm.name.trim();
+    if (trimmedName !== detailCustomer.name) patch.name = trimmedName;
+
+    const digitsPhone = onlyDigits(detailForm.phone);
+    const prevDigitsPhone = onlyDigits(detailCustomer.phone ?? "");
+    if (digitsPhone !== prevDigitsPhone) patch.phone = digitsPhone;
+
+    const trimmedEmail = detailForm.email.trim();
+    if ((detailCustomer.email ?? "") !== trimmedEmail) patch.email = trimmedEmail || null;
+
+    const addr1 = detailForm.addr1.trim();
+    if ((detailCustomer.addr1 ?? "") !== addr1) patch.addr1 = addr1 || null;
+
+    const addr2 = detailForm.addr2.trim();
+    if ((detailCustomer.addr2 ?? "") !== addr2) patch.addr2 = addr2 || null;
+
+    if (Object.keys(patch).length === 0) {
+      closeDetail();
+      return;
+    }
+
+    setDetailSaving(true);
+    try {
+      await updateField(detailCustomer.id, patch);
+      setDetailDirty(false);
+      closeDetail();
+    } catch {
+      // 실패시 updateField 내부에서 fetchList 호출
+    } finally {
+      setDetailSaving(false);
+    }
+  }
+
+  async function removeFromDetail() {
+    if (!detailCustomer) return;
+    const deleted = await removeCustomer(detailCustomer.id);
+    if (deleted) closeDetail();
+  }
+
   /* ----- realtime ----- */
   useEffect(() => {
     const supabase = supabaseBrowser();
@@ -260,7 +390,9 @@ export default function CustomersPage() {
               return prev.map((r) => (r.id === next.id ? next : r));
             }
             if (payload.eventType === "DELETE") {
-              const oldId = (payload.old as any).id;
+              const oldRecord = payload.old as Record<string, unknown> | null;
+              const oldId = oldRecord && typeof oldRecord.id === "string" ? oldRecord.id : null;
+              if (!oldId) return prev;
               return prev.filter((r) => r.id !== oldId);
             }
             return prev;
@@ -285,7 +417,7 @@ export default function CustomersPage() {
       const res = await apiPost<{ ok: boolean; row: Customer }>("/api/customers", payload);
       setRows((s) => [normalizeCustomer(res.row), ...s]);
       setOpenNew(false);
-      setNewCustomer({ name: "", phone: "", email: "", addr1: "", addr2: "", memo: "" });
+      setNewCustomer(INITIAL_NEW_CUSTOMER);
     } catch {
       alert("생성 실패");
     } finally {
@@ -293,30 +425,36 @@ export default function CustomersPage() {
     }
   }
 
-  async function updateField(id: string, patch: Partial<Record<keyof Customer, any>>) {
+  async function updateField(id: string, patch: CustomerPatch) {
     try {
-      const body: any = {};
-      for (const [k, v] of Object.entries(patch)) {
-        if (k === "phone" && typeof v === "string") body.phone = display010(v);
-        else body[k] = v;
-      }
-      await apiPatch("/api/customers", { id, ...body });
-      setRows((prev) => prev.map((r) => (r.id === id ? ({ ...r, ...body } as Customer) : r)));
+      const apiPayload = prepareCustomerPatch(patch);
+      await apiPatch("/api/customers", { id, ...apiPayload });
+
+      const statePatch: Partial<Customer> = {};
+      if (patch.name !== undefined) statePatch.name = patch.name ?? "";
+      if (patch.phone !== undefined) statePatch.phone = display010(patch.phone ?? "");
+      if (patch.email !== undefined) statePatch.email = patch.email ?? null;
+      if (patch.addr1 !== undefined) statePatch.addr1 = patch.addr1 ?? null;
+      if (patch.addr2 !== undefined) statePatch.addr2 = patch.addr2 ?? null;
+
+      setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...statePatch } : r)));
     } catch {
       await fetchList();
       alert("업데이트 실패");
     }
   }
 
-  async function removeCustomer(id: string) {
-    if (!confirm("삭제할까요?")) return;
+  async function removeCustomer(id: string): Promise<boolean> {
+    if (!confirm("삭제할까요?")) return false;
     const prev = rows;
     setRows((s) => s.filter((r) => r.id !== id));
     try {
       await apiDelete(`/api/customers?id=${encodeURIComponent(id)}`);
+      return true;
     } catch {
       setRows(prev);
       alert("삭제 실패");
+      return false;
     }
   }
 
@@ -406,7 +544,7 @@ export default function CustomersPage() {
                     </td>
                     <td className="px-4 py-3 text-[var(--foreground)]">
                       <EditableCell
-                        value={c.phone ? (String(c.phone).replace(/\D/g, "").length ? (String(c.phone).replace(/\D/g, "").length<=3 ? String(c.phone).replace(/\D/g, "") : String(c.phone).replace(/\D/g, "").length<=7 ? `${String(c.phone).replace(/\D/g, "").slice(0,3)}-${String(c.phone).replace(/\D/g, "").slice(3)}` : `${String(c.phone).replace(/\D/g, "").slice(0,3)}-${String(c.phone).replace(/\D/g, "").slice(3,7)}-${String(c.phone).replace(/\D/g, "").slice(7,11)}`) : c.phone) : c.phone}
+                        value={c.phone}
                         placeholder="전화번호"
                         onSave={(v) => updateField(c.id, { phone: v })}
                       />
@@ -436,7 +574,10 @@ export default function CustomersPage() {
                       {new Date(c.createdAt).toLocaleDateString("ko-KR")}
                     </td>
                     <td className="px-4 py-3">
-                      <Button onClick={() => removeCustomer(c.id)}>삭제</Button>
+                      <div className="flex items-center gap-2">
+                        <Button onClick={() => setDetailId(c.id)}>상세</Button>
+                        <Button onClick={() => removeCustomer(c.id)} className="border-red-500 text-red-500">삭제</Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -466,6 +607,79 @@ export default function CustomersPage() {
           {nextCursor ? (isLoadingMore ? "불러오는 중…" : "더 보기") : "더 없음"}
         </Button>
       </div>
+
+      {/* Detail Modal */}
+      <Modal open={detailId !== null} onClose={closeDetail} title="고객 상세">
+        {detailCustomer ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm text-neutral-600">이름</label>
+                <Input
+                  value={detailForm.name}
+                  onChange={(e) => applyDetailChange("name", e.target.value)}
+                  placeholder="이름"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-neutral-600">전화번호</label>
+                <Input
+                  value={detailForm.phone}
+                  onChange={(e) => applyDetailChange("phone", formatPhone(e.target.value))}
+                  placeholder="010-0000-0000"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-neutral-600">이메일</label>
+                <Input
+                  value={detailForm.email}
+                  onChange={(e) => applyDetailChange("email", e.target.value)}
+                  placeholder="name@example.com"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-neutral-600">주소 1</label>
+                <Input
+                  value={detailForm.addr1}
+                  onChange={(e) => applyDetailChange("addr1", e.target.value)}
+                  placeholder="시/군/구"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-neutral-600">주소 2</label>
+                <Input
+                  value={detailForm.addr2}
+                  onChange={(e) => applyDetailChange("addr2", e.target.value)}
+                  placeholder="상세 주소"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 rounded-md bg-[var(--table-head-bg)] px-3 py-2 text-sm text-[color:var(--muted)]">
+              <span>등록일: {new Date(detailCustomer.createdAt).toLocaleString("ko-KR")}</span>
+              <span>고객 ID: {detailCustomer.id}</span>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
+              <Button onClick={removeFromDetail} className="border-red-500 text-red-500">
+                삭제
+              </Button>
+              <div className="flex gap-2">
+                <Button onClick={closeDetail} disabled={detailSaving}>
+                  닫기
+                </Button>
+                <Button onClick={saveDetail} disabled={!detailDirty || detailSaving}>
+                  {detailSaving ? "저장중…" : "변경 저장"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="py-10 text-center text-sm text-neutral-500">
+            선택된 고객 정보를 불러오지 못했습니다.
+          </div>
+        )}
+      </Modal>
 
       {/* New Customer Modal */}
       <Modal open={openNew} onClose={() => setOpenNew(false)} title="New Customer">
