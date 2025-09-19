@@ -81,9 +81,6 @@ export default function LoginForm() {
           <Link href="/signup" className="block transition hover:text-white">
             계정이 없으신가요? Sign up
           </Link>
-          <Link href="/leads" className="mt-1 block transition hover:text-white">
-            Leads 보기
-          </Link>
         </div>
       </form>
     </div>

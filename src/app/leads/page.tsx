@@ -107,7 +107,7 @@ function Switch({
     <button
       type="button"
       onClick={() => !disabled && onChange(!checked)}
-      className={`h-6 w-11 rounded-full border px-0.5 transition
+      className={`h-6 w-11 rounded-full border px-0.5 transition cursor-pointer
         ${checked ? "bg-green-500/90 border-green-600" : "bg-neutral-200 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600"}
         ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
       aria-pressed={checked}
@@ -128,7 +128,10 @@ function Badge({ children }: { children: React.ReactNode }) {
 function onlyDigits(s: string) { return s.replace(/\D/g, ""); }
 function fmtPhoneKR(d: string) {
   const v = onlyDigits(d).slice(0, 11);
-  if (v.length <= 3) return v;
+  if (v.length === 0) return "";
+  if (v.length <= 3) {
+    return v.startsWith("010") ? "010-" : v;
+  }
   if (v.length <= 7) return `${v.slice(0,3)}-${v.slice(3)}`;
   return `${v.slice(0,3)}-${v.slice(3,7)}-${v.slice(7)}`;
 }
@@ -615,6 +618,7 @@ function EditableCell({
     return `${d.slice(0,3)}-${d.slice(3,7)}-${d.slice(7,11)}`;
   });
   useEffect(() => {
+    if (editing) return;
     const v = value ?? "";
     if (!isPhone) { setVal(v); return; }
     const d = v.replace(/\D/g, "");
@@ -622,14 +626,56 @@ function EditableCell({
     if (d.length <= 3) setVal(d);
     else if (d.length <= 7) setVal(`${d.slice(0,3)}-${d.slice(3)}`);
     else setVal(`${d.slice(0,3)}-${d.slice(3,7)}-${d.slice(7,11)}`);
-  }, [value, isPhone]);
+  }, [value, isPhone, editing]);
 
   async function commit() {
-    // For phone, keep user-visible hyphenated value
-    const out = isPhone ? val : val.trim();
-    if (out === (isPhone ? (value ?? "").replace(/\D/g, "") : (value ?? "").trim())) { setEditing(false); return; }
+    if (isPhone) {
+      const digits = val.replace(/\D/g, "");
+      const prevDigits = (value ?? "").replace(/\D/g, "");
+      if (digits.length <= 3) {
+        if (!prevDigits.length) {
+          setVal("");
+          setEditing(false);
+          return;
+        }
+        try {
+          await onSave("");
+          setVal("");
+          setEditing(false);
+        } catch {
+          alert("저장 실패");
+        }
+        return;
+      }
+
+      if (digits.length !== 11 || !digits.startsWith("010")) {
+        alert("전화번호는 010으로 시작하는 11자리여야 합니다.");
+        const formattedPartial = fmtPhoneKR(digits);
+        setVal(formattedPartial);
+        return;
+      }
+
+      const formatted = fmtPhoneKR(digits);
+      if (digits === prevDigits) {
+        setVal(formatted);
+        setEditing(false);
+        return;
+      }
+
+      try {
+        await onSave(formatted);
+        setVal(formatted);
+        setEditing(false);
+      } catch {
+        alert("저장 실패");
+      }
+      return;
+    }
+
+    const trimmed = val.trim();
+    if (trimmed === (value ?? "")) { setEditing(false); return; }
     try {
-      await onSave(out);
+      await onSave(trimmed);
       setEditing(false);
     } catch {
       alert("저장 실패");
@@ -650,10 +696,23 @@ function EditableCell({
       onChange={(e) => {
         const v = e.target.value;
         if (!isPhone) { setVal(v); return; }
-        const d = v.replace(/\D/g, "").slice(0,11);
-        if (d.length <= 3) setVal(d);
-        else if (d.length <= 7) setVal(`${d.slice(0,3)}-${d.slice(3)}`);
-        else setVal(`${d.slice(0,3)}-${d.slice(3,7)}-${d.slice(7,11)}`);
+        const digits = v.replace(/\D/g, "").slice(0, 11);
+        if (digits.length === 0) {
+          setVal("");
+          return;
+        }
+        if (!digits.startsWith("010")) {
+          // Enforce local convention of 010 prefix while editing
+          setVal(fmtPhoneKR(`010${digits.slice(3)}`));
+          return;
+        }
+        if (digits.length <= 3) {
+          setVal("010-");
+        } else if (digits.length <= 7) {
+          setVal(`${digits.slice(0,3)}-${digits.slice(3)}`);
+        } else {
+          setVal(`${digits.slice(0,3)}-${digits.slice(3,7)}-${digits.slice(7,11)}`);
+        }
       }}
       onFocus={(e) => {
         if (isPhone && !val) {

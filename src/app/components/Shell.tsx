@@ -2,7 +2,7 @@
 "use client";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import type { User } from "@supabase/supabase-js";
 
@@ -108,6 +108,19 @@ export default function Shell({ title, children }: { title: string; children: Re
     return sessionUser.email && sessionUser.email !== accountName ? sessionUser.email : null;
   }, [accountName, sessionUser]);
 
+  const logoutButtonStyle = useMemo<CSSProperties>(() => {
+    if (theme === 'dark') {
+      return {
+        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+        color: '#fecaca',
+      };
+    }
+    return {
+      backgroundColor: '#ef4444',
+      color: '#ffffff',
+    };
+  }, [theme]);
+
   const NavLink = ({ href, label }: { href: string; label: string }) => {
     const active = pathname === href;
     return (
@@ -160,7 +173,7 @@ export default function Shell({ title, children }: { title: string; children: Re
           <div ref={accountRef} className="relative px-3 pb-4">
             <button
               onClick={() => setAccountOpen((v) => !v)}
-              className="flex w-full items-center gap-3 rounded-xl border border-[var(--panel-border)] bg-[var(--panel)] px-3 py-2 text-left text-[var(--foreground)] transition hover:bg-[var(--table-head-bg)]"
+              className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-[var(--panel-border)] bg-[var(--panel)] px-3 py-2 text-left text-[var(--foreground)] transition hover:bg-[var(--table-head-bg)]"
               aria-haspopup="true"
               aria-expanded={accountOpen}
             >
@@ -179,7 +192,8 @@ export default function Shell({ title, children }: { title: string; children: Re
               <div className="absolute bottom-full left-0 right-0 mb-2 rounded-xl border border-[var(--panel-border)] bg-[var(--panel)] p-2 shadow-lg">
                 <button
                   onClick={onLogout}
-                  className="w-full rounded-lg bg-red-500/20 px-3 py-2 text-sm font-medium text-red-200 transition hover:bg-red-500/30"
+                  className="w-full cursor-pointer rounded-lg px-3 py-2 text-sm font-medium transition hover:bg-red-600/90"
+                  style={logoutButtonStyle}
                 >
                   로그아웃
                 </button>
