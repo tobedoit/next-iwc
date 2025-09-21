@@ -34,10 +34,16 @@ export default function SignupForm({ orgs }: { orgs: SignupOrgOption[] }) {
     }
 
     const supabase = supabaseBrowser();
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const emailRedirectTo = origin
+      ? `${origin}/auth/callback?${new URLSearchParams({ next: "/leads" })}`
+      : undefined;
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        emailRedirectTo,
         data: {
           name,
           org_id: orgId,
