@@ -22,6 +22,20 @@
       "when": 1757637907769,
       "tag": "0002_outgoing_cargill",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1758550449489,
+      "tag": "0003_auth_public_users_link",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1758550449490,
+      "tag": "0004_rls_auth_select",
+      "breakpoints": true
     }
   ]
 }
