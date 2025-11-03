@@ -696,27 +696,23 @@ function EditableCell({
 }: { value: string | null; placeholder?: string; onSave: (v: string) => Promise<void> }) {
   const isPhone = /전화/.test(placeholder ?? "");
   const [editing, setEditing] = useState(false);
-  const [val, setVal] = useState(() => {
-    const v = value ?? "";
+  function formatForInput(raw: string | null) {
+    const v = raw ?? "";
     if (!isPhone) return v;
     const d = v.replace(/\D/g, "");
     if (!d) return "";
     if (d.length <= 3) return d;
     if (d.length <= 7) return `${d.slice(0,3)}-${d.slice(3)}`;
     return `${d.slice(0,3)}-${d.slice(3,7)}-${d.slice(7,11)}`;
-  });
-  useEffect(() => {
-    if (editing) return;
-    const v = value ?? "";
-    if (!isPhone) { setVal(v); return; }
-    const d = v.replace(/\D/g, "");
-    if (!d) { setVal(""); return; }
-    if (d.length <= 3) setVal(d);
-    else if (d.length <= 7) setVal(`${d.slice(0,3)}-${d.slice(3)}`);
-    else setVal(`${d.slice(0,3)}-${d.slice(3,7)}-${d.slice(7,11)}`);
-  }, [value, isPhone, editing]);
+  }
+  const [val, setVal] = useState(() => formatForInput(value));
+  const openEditor = () => {
+    setVal(formatForInput(value));
+    setEditing(true);
+  };
 
   async function commit() {
+    const v = value ?? "";
     if (isPhone) {
       const digits = val.replace(/\D/g, "");
       const prevDigits = (value ?? "").replace(/\D/g, "");
@@ -728,7 +724,7 @@ function EditableCell({
         }
         try {
           await onSave("");
-          setVal("");
+          setVal(formatForInput(""));
           setEditing(false);
         } catch {
           alert("저장 실패");
@@ -772,7 +768,7 @@ function EditableCell({
 
   if (!editing) {
     return (
-      <div className="cursor-pointer whitespace-pre-wrap rounded p-1 transition-colors" onDoubleClick={() => setEditing(true)} title="더블클릭하여 수정">
+      <div className="cursor-pointer whitespace-pre-wrap rounded p-1 transition-colors" onDoubleClick={openEditor} title="더블클릭하여 수정">
         {value || <span className="text-neutral-500">{placeholder ?? "-"}</span>}
       </div>
     );
@@ -810,7 +806,13 @@ function EditableCell({
         }
       }}
       onBlur={commit}
-      onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEditing(false); }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") commit();
+        if (e.key === "Escape") {
+          setEditing(false);
+          setVal(formatForInput(value));
+        }
+      }}
       className="w-full rounded border px-2 py-1 text-sm outline-none transition-colors bg-[var(--panel)] text-[var(--foreground)] border-[var(--panel-border)] focus:ring-2 focus:ring-[var(--panel-border)]"
       placeholder={placeholder}
     />

@@ -202,8 +202,12 @@ function EditableCell({
   value, placeholder, onSave,
 }: { value: string | null; placeholder?: string; onSave: (v: string) => Promise<void> }) {
   const [editing, setEditing] = useState(false);
-  const [val, setVal] = useState(value ?? "");
-  useEffect(() => setVal(value ?? ""), [value]);
+  const [val, setVal] = useState(() => value ?? "");
+
+  const openEditor = () => {
+    setVal(value ?? "");
+    setEditing(true);
+  };
 
   async function commit() {
     const trimmed = val.trim();
@@ -220,7 +224,7 @@ function EditableCell({
     return (
       <div
         className="cursor-pointer whitespace-pre-wrap rounded p-1"
-        onDoubleClick={() => setEditing(true)}
+        onDoubleClick={openEditor}
         title="더블클릭하여 수정"
       >
         {value || <span className="text-neutral-500">{placeholder ?? "-"}</span>}
@@ -233,7 +237,13 @@ function EditableCell({
       value={val}
       onChange={(e) => setVal(e.target.value)}
       onBlur={commit}
-      onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEditing(false); }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") commit();
+        if (e.key === "Escape") {
+          setEditing(false);
+          setVal(value ?? "");
+        }
+      }}
       className="w-full rounded border px-2 py-1 text-sm outline-none transition-colors bg-[var(--panel)] text-[var(--foreground)] border-[var(--panel-border)] focus:ring-2 focus:ring-[var(--panel-border)]"
       placeholder={placeholder}
     />
