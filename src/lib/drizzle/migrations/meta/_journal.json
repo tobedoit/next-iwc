@@ -43,6 +43,13 @@
       "when": 1758551481181,
       "tag": "0005_split_appt_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1758587171825,
+      "tag": "0006_index_users_org_id",
+      "breakpoints": true
     }
   ]
 }
