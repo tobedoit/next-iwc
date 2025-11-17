@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { supabaseServer } from "@/lib/supabase/server";
 
 function resolveNextPath(rawNext: string | null | undefined): string {
   if (!rawNext) return "/leads";
@@ -18,23 +17,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options as CookieOptions);
-            });
-          },
-        },
-      }
-    );
+    const supabase = await supabaseServer({ allowCookieWrites: true });
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
       console.error("[auth/callback] session exchange failed", error);
