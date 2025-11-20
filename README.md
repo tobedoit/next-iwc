@@ -1,3 +1,17 @@
+# Wedding Solution
+
+![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.1-38BDF8?logo=tailwind-css&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-ssr%20%7C%20js-3FCF8E?logo=supabase&logoColor=white)
+![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-0.44-FFCE00?logo=drizzle&logoColor=black)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql&logoColor=white)
+![Turbopack](https://img.shields.io/badge/Turbopack-dev-orange)
+![pnpm](https://img.shields.io/badge/pnpm-10.22-F69220?logo=pnpm&logoColor=white)
+![ESLint](https://img.shields.io/badge/ESLint-9-4B32C3?logo=eslint&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-ready-000000?logo=vercel&logoColor=white)
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
