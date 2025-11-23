@@ -20,6 +20,7 @@
 - [x] `src/app/api/appointments/route.ts` 타입 선언 보강
 - [x] `src/app/api/leads/route.ts` 타입 선언 보강
 - [x] 고객·리드·일정 페이지 컴포넌트(`page.tsx`)의 남은 `any` 제거 후 ESLint 통과
+- [x] leads PATCH 기본값 주입 버그 수정(visited/consent 토글 시 다른 필드가 덮여쓰이는 문제)
 - [ ] leads와 customers의 통합문제 해결 → 신청디비랑 계약고객의 상관관계에 대해서 figure out. 그리고 난 후, 통합할것인지 명확하게 task direction 확립
 - [ ] 플레너 권한에 따른 접근 제한, 어드민은 full access 가능
 - [ ] 회원가입 이메일 디자인 수정 (영어 → 한글) 그리고 Supabase Auth 말고 회사브랜드로 바꿀 수 있는지 나중에 확인
