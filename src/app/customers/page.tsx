@@ -105,7 +105,7 @@ function Button(props: React.ButtonHTMLAttributes<HTMLButtonElement>) {
       {...props}
       className={
         "rounded-md border px-3 py-2 text-sm active:scale-[0.99] cursor-pointer " +
-        "bg-[var(--panel)] text-[var(--foreground)] border-[var(--panel-border)] hover:bg-[var(--table-head-bg)] " +
+        "bg-panel text-foreground border-panel-border hover:bg-table-head-bg " +
         (props.className ?? "")
       }
     />
@@ -117,7 +117,7 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
       {...props}
       className={
         "w-full rounded-md border px-3 py-2 text-sm outline-none " +
-        "bg-[var(--panel)] text-[var(--foreground)] border-[var(--panel-border)] placeholder:[color:var(--muted)] focus:ring-2 focus:ring-[var(--panel-border)] " +
+        "bg-panel text-foreground border-panel-border placeholder:text-muted focus:ring-2 focus:ring-panel-border " +
         (props.className ?? "")
       }
     />
@@ -134,10 +134,10 @@ function Modal({
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
-      <div className="w-full max-w-xl rounded-xl p-5 shadow-xl bg-[var(--panel)] border border-[var(--panel-border)] text-[var(--foreground)]">
+      <div className="w-full max-w-xl rounded-xl p-5 shadow-xl bg-panel border border-panel-border text-foreground">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-[var(--foreground)]">{title}</h3>
-          <button onClick={onClose} className="text-[color:var(--muted)] hover:text-[var(--foreground)]">✕</button>
+          <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+          <button onClick={onClose} className="text-muted hover:text-foreground">✕</button>
         </div>
         {children}
       </div>
@@ -210,7 +210,7 @@ function EditableCell({
           setVal(isPhone ? formatPhone(value) : (value ?? ""));
         }
       }}
-      className="w-full rounded border px-2 py-1 text-sm outline-none transition-colors bg-[var(--panel)] text-[var(--foreground)] border-[var(--panel-border)] focus:ring-2 focus:ring-[var(--panel-border)]"
+      className="w-full rounded border px-2 py-1 text-sm outline-none transition-colors bg-panel text-foreground border-panel-border focus:ring-2 focus:ring-panel-border"
       placeholder={placeholder}
     />
   );
@@ -474,7 +474,7 @@ export default function CustomersPage() {
     <Shell title="Customers">
       {/* header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-[var(--foreground)]">Customers</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Customers</h1>
         <div className="flex items-center gap-2">
           <Button onClick={() => setOpenNew(true)}>+ New Customer</Button>
           <Button onClick={fetchList}>Refresh</Button>
@@ -500,15 +500,15 @@ export default function CustomersPage() {
             onChange={(e) => setQ(e.target.value)}
           />
         </div>
-        <div className="text-sm [color:var(--muted)]">
+        <div className="text-sm text-muted">
           {loading ? "Loading..." : `${rows.length} results`}
         </div>
       </div>
 
       {/* table */}
-      <div className="mt-4 overflow-x-auto rounded-lg border border-[var(--panel-border)]">
+      <div className="mt-4 overflow-x-auto rounded-lg border border-panel-border">
         <table className="min-w-[900px] w-full text-sm">
-          <thead className="bg-[var(--table-head-bg)] text-neutral-600">
+          <thead className="bg-table-head-bg text-neutral-600">
             <tr>
               <th className="px-4 py-3 text-left">Name</th>
               <th className="px-4 py-3 text-left">Phone</th>
@@ -540,29 +540,29 @@ export default function CustomersPage() {
                     .some((x) => (x ?? "").toLowerCase().includes(s));
                 })
                 .map((c) => (
-                  <tr key={c.id} className="border-t border-[var(--panel-border)]">
-                    <td className="px-4 py-3 font-medium text-[var(--foreground)]">
+                  <tr key={c.id} className="border-t border-panel-border">
+                    <td className="px-4 py-3 font-medium text-foreground">
                       <EditableCell
                         value={c.name}
                         placeholder="이름"
                         onSave={(v) => updateField(c.id, { name: v })}
                       />
                     </td>
-                    <td className="px-4 py-3 text-[var(--foreground)]">
+                    <td className="px-4 py-3 text-foreground">
                       <EditableCell
                         value={c.phone}
                         placeholder="전화번호"
                         onSave={(v) => updateField(c.id, { phone: v })}
                       />
                     </td>
-                    <td className="px-4 py-3 text-[var(--foreground)]">
+                    <td className="px-4 py-3 text-foreground">
                       <EditableCell
                         value={c.email}
                         placeholder="email"
                         onSave={(v) => updateField(c.id, { email: v })}
                       />
                     </td>
-                    <td className="px-4 py-3 text-[var(--foreground)]">
+                    <td className="px-4 py-3 text-foreground">
                       <div className="grid grid-cols-1 gap-1">
                         <EditableCell
                           value={c.addr1}
@@ -576,7 +576,7 @@ export default function CustomersPage() {
                         />
                       </div>
                     </td>
-                    <td className="px-4 py-3 [color:var(--muted)]">
+                    <td className="px-4 py-3 text-muted">
                       {new Date(c.createdAt).toLocaleDateString("ko-KR")}
                     </td>
                     <td className="px-4 py-3">
@@ -661,7 +661,7 @@ export default function CustomersPage() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 rounded-md bg-[var(--table-head-bg)] px-3 py-2 text-sm text-[color:var(--muted)]">
+            <div className="flex flex-col gap-3 rounded-md bg-table-head-bg px-3 py-2 text-sm text-muted">
               <span>등록일: {new Date(detailCustomer.createdAt).toLocaleString("ko-KR")}</span>
               <span>고객 ID: {detailCustomer.id}</span>
             </div>

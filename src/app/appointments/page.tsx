@@ -146,8 +146,8 @@ function Button(props: React.ButtonHTMLAttributes<HTMLButtonElement>) {
       {...props}
       className={
         "rounded-md border px-3 py-2 text-sm active:scale-[0.99] cursor-pointer " +
-        "bg-[var(--panel)] text-[var(--foreground)] border-[var(--panel-border)] hover:bg-[var(--table-head-bg)] " +
-        "disabled:text-[color:var(--muted)] disabled:opacity-60 disabled:cursor-not-allowed " +
+        "bg-panel text-foreground border-panel-border hover:bg-table-head-bg " +
+        "disabled:text-muted disabled:opacity-60 disabled:cursor-not-allowed " +
         (props.className ?? "")
       }
     />
@@ -159,7 +159,7 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
       {...props}
       className={
         "w-full rounded-md border px-3 py-2 text-sm outline-none " +
-        "bg-[var(--panel)] text-[var(--foreground)] border-[var(--panel-border)] placeholder:[color:var(--muted)] focus:ring-2 focus:ring-[var(--panel-border)] " +
+        "bg-panel text-foreground border-panel-border placeholder:text-muted focus:ring-2 focus:ring-panel-border " +
         (props.className ?? "")
       }
     />
@@ -171,7 +171,7 @@ function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
       {...props}
       className={
         "rounded-md border px-3 py-2 text-sm outline-none cursor-pointer " +
-        "bg-[var(--panel)] text-[var(--foreground)] border-[var(--panel-border)] focus:ring-2 focus:ring-[var(--panel-border)] " +
+        "bg-panel text-foreground border-panel-border focus:ring-2 focus:ring-panel-border " +
         (props.className ?? "")
       }
     />
@@ -188,10 +188,10 @@ function Modal({
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
-      <div className="w-full max-w-xl rounded-xl p-5 shadow-xl bg-[var(--panel)] border border-[var(--panel-border)] text-[var(--foreground)]">
+      <div className="w-full max-w-xl rounded-xl p-5 shadow-xl bg-panel border border-panel-border text-foreground">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-[var(--foreground)]">{title}</h3>
-          <button onClick={onClose} className="text-[color:var(--muted)] hover:text-[var(--foreground)]">✕</button>
+          <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+          <button onClick={onClose} className="text-muted hover:text-foreground">✕</button>
         </div>
         {children}
       </div>
@@ -244,7 +244,7 @@ function EditableCell({
           setVal(value ?? "");
         }
       }}
-      className="w-full rounded border px-2 py-1 text-sm outline-none transition-colors bg-[var(--panel)] text-[var(--foreground)] border-[var(--panel-border)] focus:ring-2 focus:ring-[var(--panel-border)]"
+      className="w-full rounded border px-2 py-1 text-sm outline-none transition-colors bg-panel text-foreground border-panel-border focus:ring-2 focus:ring-panel-border"
       placeholder={placeholder}
     />
   );
@@ -430,7 +430,7 @@ export default function AppointmentsPage() {
     <Shell title="Appointments">
       {/* header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-[var(--foreground)]">Appointments</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Appointments</h1>
         <div className="flex items-center gap-2">
           <Button onClick={() => setOpenNew(true)}>+ New</Button>
           <Button onClick={fetchList}>Refresh</Button>
@@ -483,9 +483,9 @@ export default function AppointmentsPage() {
       </div>
 
       {/* table */}
-      <div className="mt-4 overflow-x-auto rounded-lg border border-[var(--panel-border)]">
+      <div className="mt-4 overflow-x-auto rounded-lg border border-panel-border">
         <table className="min-w-[1000px] w-full text-sm">
-          <thead className="bg-[var(--table-head-bg)] text-neutral-600">
+          <thead className="bg-table-head-bg text-neutral-600">
             <tr>
               <th className="px-4 py-3 text-left">When</th>
               <th className="px-4 py-3 text-left">Kind</th>
@@ -498,11 +498,11 @@ export default function AppointmentsPage() {
             {loading &&
               Array.from({ length: 6 }).map((_, i) => (
                 <tr key={`s-${i}`} className="animate-pulse">
-                  <td className="px-4 py-3"><div className="h-4 w-52 rounded bg-[var(--panel-border)]/60" /></td>
-                  <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-[var(--panel-border)]/60" /></td>
-                  <td className="px-4 py-3"><div className="h-4 w-24 rounded bg-[var(--panel-border)]/60" /></td>
-                  <td className="px-4 py-3"><div className="h-4 w-48 rounded bg-[var(--panel-border)]/60" /></td>
-                  <td className="px-4 py-3"><div className="h-4 w-24 rounded bg-[var(--panel-border)]/60" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-52 rounded bg-panel-border/60" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-panel-border/60" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-24 rounded bg-panel-border/60" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-48 rounded bg-panel-border/60" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-24 rounded bg-panel-border/60" /></td>
                 </tr>
               ))}
 
@@ -511,8 +511,8 @@ export default function AppointmentsPage() {
               const end = new Date(r.endAt);
               const when = `${start.toLocaleString("ko-KR")} ~ ${end.toLocaleTimeString("ko-KR")}`;
               return (
-                <tr key={r.id} className="border-t border-[var(--panel-border)] align-top">
-                  <td className="px-4 py-3 text-[var(--foreground)]">{when}</td>
+                <tr key={r.id} className="border-t border-panel-border align-top">
+                  <td className="px-4 py-3 text-foreground">{when}</td>
 
                   <td className="px-4 py-3">
                     <Select
@@ -542,7 +542,7 @@ export default function AppointmentsPage() {
                     </Select>
                   </td>
 
-                  <td className="px-4 py-3 text-[var(--foreground)]">
+                  <td className="px-4 py-3 text-foreground">
                     <EditableCell
                       value={r.note}
                       placeholder="메모"

@@ -129,8 +129,8 @@ export default function Shell({ title, children }: { title: string; children: Re
         className={
           "block rounded-xl px-4 py-2 text-sm transition " +
           (active
-            ? "shadow bg-[var(--nav-active-bg)] text-[var(--nav-active-fg)]"
-            : "text-[var(--foreground)] hover:bg-[var(--nav-hover-bg)]")
+            ? "shadow bg-nav-active-bg text-nav-active-fg"
+            : "text-foreground hover:bg-nav-hover-bg")
         }
       >
         {label}
@@ -140,7 +140,7 @@ export default function Shell({ title, children }: { title: string; children: Re
 
   return (
     <div className="min-h-dvh grid grid-cols-1 lg:grid-cols-[280px_1fr]">
-      <aside className={`border-r border-[var(--panel-border)] ${open ? "block" : "hidden lg:block"}`}>
+      <aside className={`border-r border-panel-border ${open ? "block" : "hidden lg:block"}`}>
         <div className="flex h-full flex-col">
           <div className="px-4 py-4">
             <div className="mb-2 flex items-center justify-between">
@@ -156,7 +156,7 @@ export default function Shell({ title, children }: { title: string; children: Re
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}
-                className="rounded-md border px-2 py-1 text-xs font-medium bg-[var(--panel)] text-[var(--foreground)] border-[var(--panel-border)] hover:bg-[var(--table-head-bg)] cursor-pointer"
+                className="rounded-md border px-2 py-1 text-xs font-medium bg-panel text-foreground border-panel-border hover:bg-table-head-bg cursor-pointer"
                 aria-label="Toggle theme"
                 title={hydrated ? (theme === 'light' ? 'Switch to dark' : 'Switch to light') : undefined}
                 suppressHydrationWarning
@@ -173,23 +173,23 @@ export default function Shell({ title, children }: { title: string; children: Re
           <div ref={accountRef} className="relative px-3 pb-4">
             <button
               onClick={() => setAccountOpen((v) => !v)}
-              className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-[var(--panel-border)] bg-[var(--panel)] px-3 py-2 text-left text-[var(--foreground)] transition hover:bg-[var(--table-head-bg)]"
+              className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-panel-border bg-panel px-3 py-2 text-left text-foreground transition hover:bg-table-head-bg"
               aria-haspopup="true"
               aria-expanded={accountOpen}
             >
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--table-head-bg)] text-sm font-semibold">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-table-head-bg text-sm font-semibold">
                 {accountInitial}
               </div>
               <div className="flex-1">
                 <div className="text-sm font-medium leading-tight">{accountName}</div>
                 {accountEmail && (
-                  <div className="text-xs leading-tight text-[color:var(--muted)]">{accountEmail}</div>
+                  <div className="text-xs leading-tight text-muted">{accountEmail}</div>
                 )}
               </div>
-              <span className="text-xs text-[color:var(--muted)]">{accountOpen ? "▲" : "▼"}</span>
+              <span className="text-xs text-muted">{accountOpen ? "▲" : "▼"}</span>
             </button>
             {accountOpen && (
-              <div className="absolute bottom-full left-0 right-0 mb-2 rounded-xl border border-[var(--panel-border)] bg-[var(--panel)] p-2 shadow-lg">
+              <div className="absolute bottom-full left-0 right-0 mb-2 rounded-xl border border-panel-border bg-panel p-2 shadow-lg">
                 <button
                   onClick={onLogout}
                   className="w-full cursor-pointer rounded-lg px-3 py-2 text-sm font-medium transition hover:bg-red-600/90"

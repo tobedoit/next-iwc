@@ -166,7 +166,7 @@ function Button(props: React.ButtonHTMLAttributes<HTMLButtonElement>) {
       {...props}
       className={
         "rounded-md border px-3 py-2 text-sm active:scale-[0.99] cursor-pointer " +
-        "bg-[var(--panel)] text-[var(--foreground)] border-[var(--panel-border)] " +
+        "bg-panel text-foreground border-panel-border " +
         (props.className ?? "")
       }
     />
@@ -178,7 +178,7 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
       {...props}
       className={
         "w-full rounded-md border px-3 py-2 text-sm outline-none " +
-        "bg-[var(--panel)] text-[var(--foreground)] border-[var(--panel-border)] placeholder:[color:var(--muted)] " +
+        "bg-panel text-foreground border-panel-border placeholder:text-muted " +
         (props.className ?? "")
       }
     />
@@ -243,10 +243,10 @@ function Modal({
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg rounded-xl p-5 shadow-xl bg-[var(--panel)] border border-[var(--panel-border)] text-[var(--foreground)]">
+      <div className="w-full max-w-lg rounded-xl p-5 shadow-xl bg-panel border border-panel-border text-foreground">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-[var(--foreground)]">{title}</h3>
-          <button onClick={onClose} className="text-[color:var(--muted)] hover:text-[var(--foreground)]">✕</button>
+          <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+          <button onClick={onClose} className="text-muted hover:text-foreground">✕</button>
         </div>
         {children}
       </div>
@@ -442,7 +442,7 @@ export default function LeadsPage() {
   return (
     <Shell title="Leads">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-[var(--foreground)]">Leads</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Leads</h1>
         <div className="flex items-center gap-2">
           <Button onClick={() => setOpenNew(true)}>+ New Lead</Button>
           <Button onClick={fetchList}>Refresh</Button>
@@ -467,7 +467,7 @@ export default function LeadsPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <select value={source} onChange={(e) => setSource(e.target.value)} className="rounded-md border px-3 py-2 text-sm bg-[var(--panel)] text-[var(--foreground)] border-[var(--panel-border)] cursor-pointer">
+        <select value={source} onChange={(e) => setSource(e.target.value)} className="rounded-md border px-3 py-2 text-sm bg-panel text-foreground border-panel-border cursor-pointer">
           <option value="">source: All</option>
           {LEAD_SOURCES.map((opt) => (
             <option key={opt} value={opt}>{opt}</option>
@@ -479,7 +479,7 @@ export default function LeadsPage() {
             const value = e.target.value;
             if (value === "" || value === "true" || value === "false") setVisited(value);
           }}
-          className="rounded-md border px-3 py-2 text-sm bg-[var(--panel)] text-[var(--foreground)] border-[var(--panel-border)] cursor-pointer"
+          className="rounded-md border px-3 py-2 text-sm bg-panel text-foreground border-panel-border cursor-pointer"
         >
           <option value="">visited: All</option>
           <option value="true">visited: true</option>
@@ -491,7 +491,7 @@ export default function LeadsPage() {
             const value = e.target.value;
             if (value === "" || value === "true" || value === "false") setConsent(value);
           }}
-          className="rounded-md border px-3 py-2 text-sm bg-[var(--panel)] text-[var(--foreground)] border-[var(--panel-border)] cursor-pointer"
+          className="rounded-md border px-3 py-2 text-sm bg-panel text-foreground border-panel-border cursor-pointer"
         >
           <option value="">consent: All</option>
           <option value="true">consent: true</option>
@@ -500,9 +500,9 @@ export default function LeadsPage() {
       </div>
 
       {/* table */}
-      <div className="mt-4 overflow-x-auto rounded-lg border border-[var(--panel-border)]">
+      <div className="mt-4 overflow-x-auto rounded-lg border border-panel-border">
         <table className="min-w-[1000px] w-full text-sm">
-          <thead className="text-neutral-600 bg-[var(--table-head-bg)]">
+          <thead className="text-neutral-600 bg-table-head-bg">
             <tr>
               <th className="px-4 py-3 text-left">Created</th>
               <th className="px-4 py-3 text-left">Bride</th>
@@ -517,21 +517,21 @@ export default function LeadsPage() {
             {loading &&
               Array.from({ length: 6 }).map((_, i) => (
                 <tr key={`s-${i}`} className="animate-pulse">
-                  <td className="px-4 py-3"><div className="h-4 w-24 rounded bg-[var(--panel-border)]/60" /></td>
-                  <td className="px-4 py-3"><div className="h-4 w-32 rounded bg-[var(--panel-border)]/60" /></td>
-                  <td className="px-4 py-3"><div className="h-4 w-32 rounded bg-[var(--panel-border)]/60" /></td>
-                  <td className="px-4 py-3"><div className="h-4 w-48 rounded bg-[var(--panel-border)]/60" /></td>
-                  <td className="px-4 py-3"><div className="h-4 w-28 rounded bg-[var(--panel-border)]/60" /></td>
-                  <td className="px-4 py-3"><div className="h-5 w-20 rounded bg-[var(--panel-border)]/60" /></td>
-                  <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-[var(--panel-border)]/60" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-24 rounded bg-panel-border/60" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-32 rounded bg-panel-border/60" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-32 rounded bg-panel-border/60" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-48 rounded bg-panel-border/60" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-28 rounded bg-panel-border/60" /></td>
+                  <td className="px-4 py-3"><div className="h-5 w-20 rounded bg-panel-border/60" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-16 rounded bg-panel-border/60" /></td>
                 </tr>
               ))}
 
             {!loading && rows.map((r) => (
-              <tr key={r.id} className="border-t border-[var(--panel-border)] align-top transition-colors">
-                <td className="px-4 py-3 text-[var(--foreground)]">{new Date(r.createdAt).toLocaleString("ko-KR")}</td>
+              <tr key={r.id} className="border-t border-panel-border align-top transition-colors">
+                <td className="px-4 py-3 text-foreground">{new Date(r.createdAt).toLocaleString("ko-KR")}</td>
 
-                <td className="px-4 py-3 text-[var(--foreground)]">
+                <td className="px-4 py-3 text-foreground">
                   <div className="font-medium">
                     <EditableCell value={r.brideName} placeholder="신부 이름" onSave={(v) => saveField(r.id, "bride_name", v)} />
                   </div>
@@ -543,7 +543,7 @@ export default function LeadsPage() {
                   </div>
                 </td>
 
-                <td className="px-4 py-3 text-[var(--foreground)]">
+                <td className="px-4 py-3 text-foreground">
                   <div className="font-medium">
                     <EditableCell value={r.groomName} placeholder="신랑 이름" onSave={(v) => saveField(r.id, "groom_name", v)} />
                   </div>
@@ -555,12 +555,12 @@ export default function LeadsPage() {
                   </div>
                 </td>
 
-                <td className="px-4 py-3 text-[var(--foreground)]">
+                <td className="px-4 py-3 text-foreground">
                   <div>{r.brideEmail || r.groomEmail || "-"}</div>
                   <div className="text-neutral-600 dark:text-neutral-400 text-[12px]">{r.bridePhone || r.groomPhone || "-"}</div>
                 </td>
 
-                <td className="px-4 py-3 text-[var(--foreground)]">
+                <td className="px-4 py-3 text-foreground">
                   <div>{r.expectedVenue || "-"}</div>
                   <div className="text-neutral-600 dark:text-neutral-400 text-[12px]">
                     {r.weddingPlannedOn ? new Date(r.weddingPlannedOn).toLocaleDateString() : "-"}
@@ -568,13 +568,13 @@ export default function LeadsPage() {
                   <div className="text-neutral-600 dark:text-neutral-400 text-[12px]">{r.source || "-"}</div>
                 </td>
 
-                <td className="px-4 py-3 text-[var(--foreground)] space-y-2">
+                <td className="px-4 py-3 text-foreground space-y-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-[var(--foreground)]">visited</span>
+                    <span className="text-xs text-foreground">visited</span>
                     <Switch checked={r.visited} onChange={(v) => toggleLead(r.id, "visited", v)} />
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-[var(--foreground)]">consent</span>
+                    <span className="text-xs text-foreground">consent</span>
                     <Switch checked={r.consent} onChange={(v) => toggleLead(r.id, "consent", v)} />
                   </div>
                 </td>
@@ -618,15 +618,15 @@ export default function LeadsPage() {
         <div className="space-y-3">
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm text-[var(--foreground)]">신부 이름 *</label>
+              <label className="mb-1 block text-sm text-foreground">신부 이름 *</label>
               <Input value={newLead.bride_name} onChange={(e) => setNewLead((s) => ({ ...s, bride_name: e.target.value }))} onKeyDown={(e) => { if (e.key === "Enter") createLead(); }} placeholder="예: 김하늘" />
             </div>
             <div>
-              <label className="mb-1 block text-sm text-[var(--foreground)]">신랑 이름 *</label>
+              <label className="mb-1 block text-sm text-foreground">신랑 이름 *</label>
               <Input value={newLead.groom_name} onChange={(e) => setNewLead((s) => ({ ...s, groom_name: e.target.value }))} onKeyDown={(e) => { if (e.key === "Enter") createLead(); }} placeholder="예: 박서준" />
             </div>
             <div>
-              <label className="mb-1 block text-sm text-[var(--foreground)]">신부 전화</label>
+              <label className="mb-1 block text-sm text-foreground">신부 전화</label>
               <Input
                 value={display010(newLead.bride_phone)}
                 onChange={(e) => setNewLead((s) => ({ ...s, bride_phone: normalize010Input(e.target.value) }))}
@@ -647,7 +647,7 @@ export default function LeadsPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm text-[var(--foreground)]">신랑 전화</label>
+              <label className="mb-1 block text-sm text-foreground">신랑 전화</label>
               <Input
                 value={display010(newLead.groom_phone)}
                 onChange={(e) => setNewLead((s) => ({ ...s, groom_phone: normalize010Input(e.target.value) }))}
@@ -668,11 +668,11 @@ export default function LeadsPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm text-[var(--foreground)]">Source</label>
+              <label className="mb-1 block text-sm text-foreground">Source</label>
               <select
                 value={newLead.source}
                 onChange={(e) => setNewLead((s) => ({ ...s, source: e.target.value }))}
-                className="w-full rounded-md border px-3 py-2 text-sm bg-[var(--panel)] text-[var(--foreground)] border-[var(--panel-border)] cursor-pointer"
+                className="w-full rounded-md border px-3 py-2 text-sm bg-panel text-foreground border-panel-border cursor-pointer"
               >
                 {LEAD_SOURCES.map((opt) => (
                   <option key={opt} value={opt}>{opt}</option>
@@ -813,7 +813,7 @@ function EditableCell({
           setVal(formatForInput(value));
         }
       }}
-      className="w-full rounded border px-2 py-1 text-sm outline-none transition-colors bg-[var(--panel)] text-[var(--foreground)] border-[var(--panel-border)] focus:ring-2 focus:ring-[var(--panel-border)]"
+      className="w-full rounded border px-2 py-1 text-sm outline-none transition-colors bg-panel text-foreground border-panel-border focus:ring-2 focus:ring-panel-border"
       placeholder={placeholder}
     />
   );
