@@ -47,9 +47,19 @@ export default function Shell({ title, children }: { title: string; children: Re
 
     async function loadSession() {
       try {
-        const { data } = await supabase.auth.getSession();
+        const { data, error } = await supabase.auth.getSession();
         if (!active) return;
-        setSessionUser(data.session?.user ?? null);
+        if (data.session?.user) {
+          setSessionUser(data.session.user);
+          return;
+        }
+        if (error) console.warn("세션 정보를 불러오지 못했습니다.", error);
+        // 세션이 없으면 한 번 더 리프레시 시도 (사파리 스토리지 차단 대비)
+        const refreshed = await supabase.auth.refreshSession();
+        if (!active) return;
+        if (refreshed.data.session?.user) {
+          setSessionUser(refreshed.data.session.user);
+        }
       } catch (error) {
         console.warn("세션 정보를 불러오지 못했습니다.", error);
       }
