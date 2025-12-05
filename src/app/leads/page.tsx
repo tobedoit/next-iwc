@@ -6,6 +6,7 @@ import Shell from "@/app/components/Shell";
 import { StatCard } from "@/app/components/StatCard";
 import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/api";
 import { supabaseBrowser } from "@/lib/supabase/browser";
+import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 // 공통 Lead 소스 옵션 (DB enum과 동일 순서 유지)
 const LEAD_SOURCES = [
@@ -345,7 +346,7 @@ export default function LeadsPage() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "leads", filter: `org_id=eq.${orgId}` },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
           setRows((prev) => {
             if (payload.eventType === "INSERT") return [normalizeLead(payload.new), ...prev];
             if (payload.eventType === "UPDATE") {

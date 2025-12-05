@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { supabaseBrowser } from "@/lib/supabase/browser";
-import type { User } from "@supabase/supabase-js";
+import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
 
 export default function Shell({ title, children }: { title: string; children: React.ReactNode }) {
   const pathname = usePathname();
@@ -67,7 +67,10 @@ export default function Shell({ title, children }: { title: string; children: Re
 
     loadSession();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((
+      _event: AuthChangeEvent,
+      session: Session | null
+    ) => {
       setSessionUser(session?.user ?? null);
     });
 

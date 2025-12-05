@@ -6,6 +6,7 @@ import Shell from "@/app/components/Shell";
 import { StatCard } from "@/app/components/StatCard";
 import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/api";
 import { supabaseBrowser } from "@/lib/supabase/browser";
+import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 export type Appointment = {
   id: string;
@@ -341,7 +342,7 @@ export default function AppointmentsPage() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "appointments", filter: `org_id=eq.${orgId}` },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
           setRows((prev) => {
             if (payload.eventType === "INSERT") return [normalizeAppt(payload.new), ...prev];
             if (payload.eventType === "UPDATE") {
