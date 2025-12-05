@@ -5,8 +5,14 @@ import { supabaseBrowser } from "@/lib/supabase/browser";
 /** 세션 토큰 헤더 생성 */
 async function authHeader(): Promise<Record<string, string>> {
   const sb = supabaseBrowser();
-  const { data } = await sb.auth.getSession();
-  const token = data.session?.access_token;
+  // 사파리에서 스토리지 접근 실패로 세션을 못 불러오는 경우가 있어 한 번 더 리프레시 시도
+  const { data, error } = await sb.auth.getSession();
+  let token = data.session?.access_token;
+  if (!token) {
+    const refreshed = await sb.auth.refreshSession();
+    token = refreshed.data.session?.access_token ?? null;
+  }
+  if (error) console.warn("authHeader getSession error", error);
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
