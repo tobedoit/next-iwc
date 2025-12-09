@@ -1,6 +1,6 @@
 {
   "name": "next-iwc",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -16,9 +16,9 @@
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
-    "@supabase/supabase-js": "^2.86.0",
-    "drizzle-orm": "^0.44.7",
-    "next": "16.0.7",
+    "@supabase/supabase-js": "^2.87.0",
+    "drizzle-orm": "^0.45.0",
+    "next": "16.0.8",
     "pg": "^8.16.3",
     "react": "19.2.1",
     "react-dom": "19.2.1"
@@ -26,17 +26,17 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.3",
     "@tailwindcss/postcss": "^4.1.17",
-    "@types/node": "^24.10.1",
+    "@types/node": "^24.10.2",
     "@types/pg": "^8.15.6",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "dotenv": "^17.2.3",
     "dotenv-cli": "^11.0.0",
-    "drizzle-kit": "^0.31.7",
+    "drizzle-kit": "^0.31.8",
     "eslint": "^9.39.1",
-    "eslint-config-next": "16.0.7",
+    "eslint-config-next": "16.0.8",
     "tailwindcss": "^4.1.17",
     "typescript": "^5.9.3"
   },
-  "packageManager": "pnpm@10.24.0"
+  "packageManager": "pnpm@10.25.0"
 }
